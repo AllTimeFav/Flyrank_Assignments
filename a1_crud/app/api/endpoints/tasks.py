@@ -22,3 +22,16 @@ def return_task(id: int):
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
     )
+
+@router.post("/")
+def add_task(title: str):
+    if title.strip() == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required"
+        )
+    id = len(tasks) + 1
+    task = {"id": id, "title": title, "done": False}
+    tasks.append(task)
+    raise HTTPException(
+        status_code=status.HTTP_201_CREATED, detail={"task": task},
+    )
