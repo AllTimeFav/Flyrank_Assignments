@@ -41,5 +41,5 @@ content-type: application/json
 
 ## Swagger Screenshot
 
-*(Please place the Swagger UI screenshot here)*
+![alt text](assets/swagger_ui.
 
