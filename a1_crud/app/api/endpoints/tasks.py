@@ -6,4 +6,4 @@ tasks = []
 
 @router.get("/")
 def get_tasks():
-    return {"message": "List of tasks"}
+    return { "name": "Task API", "version": "1.0", "endpoints": ["/tasks"] }
