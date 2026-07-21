@@ -35,3 +35,32 @@ def add_task(title: str):
     raise HTTPException(
         status_code=status.HTTP_201_CREATED, detail={"task": task},
     )
+
+@router.put("/{id}")
+def update_task(id: int, title: str, done: bool):
+    if title.strip() == "" or done == None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Title and done are required"
+        )
+    for task in tasks:
+        if task["id"] == id:
+            task["title"] = title
+            task["done"] = done
+            raise HTTPException(
+                status_code=status.HTTP_200_OK, detail={"task": task}
+            )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
+    )
+
+@router.delete("/{id}")
+def delete_task(id : int):
+    for task in tasks:
+        if task["id"] == id:
+            tasks.remove(task)
+            raise HTTPException(
+                status_code=status.HTTP_200_OK, detail=f"Task {id} deleted successfully"
+            )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
+    )
