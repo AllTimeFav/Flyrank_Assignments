@@ -2,7 +2,7 @@ from fastapi import status
 from fastapi import HTTPException
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(tags=["Tasks"])
 
 tasks = [
     {"id": 1, "title": "First Book", "done": False},
@@ -10,11 +10,11 @@ tasks = [
     {"id": 3, "title": "Third Book", "done": True}
 ]
 
-@router.get("/")
+@router.get("/", summary="Get all the tasks")
 def get_tasks():
     return {"tasks": tasks}
 
-@router.get("/{id}")
+@router.get("/{id}", summary="Get a task by id")
 def return_task(id: int):
     for task in tasks:
         if task["id"] == id:
@@ -23,7 +23,7 @@ def return_task(id: int):
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
     )
 
-@router.post("/")
+@router.post("/", summary="Add a new task")
 def add_task(title: str):
     if title.strip() == "":
         raise HTTPException(
@@ -36,7 +36,7 @@ def add_task(title: str):
         status_code=status.HTTP_201_CREATED, detail={"task": task},
     )
 
-@router.put("/{id}")
+@router.put("/{id}", summary="Update a task by id")
 def update_task(id: int, title: str, done: bool):
     if title.strip() == "" or done == None:
         raise HTTPException(
@@ -53,7 +53,7 @@ def update_task(id: int, title: str, done: bool):
         status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
     )
 
-@router.delete("/{id}")
+@router.delete("/{id}", summary="Delete a task by id")
 def delete_task(id : int):
     for task in tasks:
         if task["id"] == id:
