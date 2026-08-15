@@ -57,25 +57,28 @@ def update_task(id: int, title: str, done: bool):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Title and done are required"
         )
-    for task in tasks:
-        if task["id"] == id:
-            task["title"] = title
-            task["done"] = done
-            raise HTTPException(
-                status_code=status.HTTP_200_OK, detail={"task": task}
-            )
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
-    )
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tasks SET title = ?, done = ? WHERE id = ?", (title, done, id))
+    conn.commit()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
+        )
+    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
 
 @router.delete("/{id}", summary="Delete a task by id")
 def delete_task(id : int):
-    for task in tasks:
-        if task["id"] == id:
-            tasks.remove(task)
-            raise HTTPException(
-                status_code=status.HTTP_200_OK, detail=f"Task {id} deleted successfully"
-            )
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
-    )
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    conn.commit()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return {"message": "Task deleted successfully"}
+    return {"message": "Task not deleted"}
