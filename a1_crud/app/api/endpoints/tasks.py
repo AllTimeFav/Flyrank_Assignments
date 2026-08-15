@@ -1,3 +1,5 @@
+from app.schemas.task import Task
+from app.db.database import get_db_connection
 from fastapi import status
 from fastapi import HTTPException
 from fastapi import APIRouter
@@ -10,18 +12,29 @@ tasks = [
     {"id": 3, "title": "Third Book", "done": True}
 ]
 
-@router.get("/", summary="Get all the tasks")
+@router.get("/", summary="Get all the tasks", response_model=list[Task])
 def get_tasks():
-    return {"tasks": tasks}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, done FROM tasks")
+    rows = cursor.fetchall()
+    conn.close()
 
-@router.get("/{id}", summary="Get a task by id")
+    return [Task(id=row["id"], title=row["title"], done=bool(row["done"])) for row in rows]
+
+@router.get("/{id}", summary="Get a task by id", response_model=Task)
 def return_task(id: int):
-    for task in tasks:
-        if task["id"] == id:
-            return {"task": task}
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
-    )
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title, done FROM tasks WHERE id = ?", (id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
+        )
+    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
+
 
 @router.post("/", summary="Add a new task")
 def add_task(title: str):
