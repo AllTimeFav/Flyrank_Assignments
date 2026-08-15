@@ -42,12 +42,14 @@ def add_task(title: str):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required"
         )
-    id = len(tasks) + 1
-    task = {"id": id, "title": title, "done": False}
-    tasks.append(task)
-    raise HTTPException(
-        status_code=status.HTTP_201_CREATED, detail={"task": task},
-    )
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
+    conn.commit()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,))
+    row = cursor.fetchone()
+    conn.close()
+    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))    
 
 @router.put("/{id}", summary="Update a task by id")
 def update_task(id: int, title: str, done: bool):
