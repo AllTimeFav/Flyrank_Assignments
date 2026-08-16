@@ -1,33 +1,26 @@
-# Flyrank Assignments
+# Flyrank Assignments - FastAPI CRUD with Docker & PostgreSQL
 
-This repository contains multiple assignments for Flyrank, including a modern, professional FastAPI project (`a1_crud`) demonstrating a CRUD application using SQLAlchemy, Pydantic V2, and Alembic.
+This is a modern, containerized FastAPI CRUD application. It demonstrates a complete stack running in Docker Compose, using PostgreSQL as the persistent database, and raw `psycopg` for direct database interactions with retry mechanisms for robust startup.
 
 ## How to Install & Run
 
-Navigate to the `a1_crud` directory and run the application using `uv`:
+1. Clone the repository and navigate into the `a1_crud` folder.
+2. Setup your environment variables (see below).
+3. Start the entire application and database with this one command:
 
 ```bash
-cd a1_crud
-uv run uvicorn app.main:app --reload
+docker compose up
 ```
 
-## Database Implementation
+## Environment Variables
 
-**Why SQLite was chosen:**
-SQLite was selected because it is a lightweight, zero-configuration database that doesn't require setting up a separate background server. It stores everything in a single local file, making it incredibly easy to manage, test, and deploy for this CRUD assignment.
+Before running the application, you need to set up your environment variables. 
+Copy the provided `.env.example` file to a new file named `.env`:
 
-**Database Storage Location:**
-The entire database is stored locally in a single file named `tasks.db`, located right in the root of the `a1_crud` directory.
-
-**Example SQL Query Executed:**
-Here is an example of a raw SQL query used in this project to insert a new task:
-```sql
-INSERT INTO tasks (title) VALUES ('Complete Assignment 2');
+```bash
+cp .env.example .env
 ```
-
-**Database Viewer Screenshot:**
-*(Please place your DB viewer screenshot at `a1_crud/assets/db_viewer.png`)*
-![Database Viewer](a1_crud/assets/db_viewer.png)
+*(The `.env` file should contain the necessary `DATABASE_URL` and `POSTGRES_*` variables for the Docker containers to work correctly).*
 
 ## API Endpoints
 
@@ -46,18 +39,38 @@ Here is a list of all available endpoints in the application:
 ## Example Request
 
 ```http
-$ curl -i http://127.0.0.1:8000/
+$ curl -i http://127.0.0.1:8000/tasks/
 
 HTTP/1.1 200 OK
-date: Tue, 21 Jul 2026 16:44:51 GMT
+date: Sun, 16 Aug 2026 20:44:42 GMT
 server: uvicorn
-content-length: 43
+content-length: 156
 content-type: application/json
+Connection: close
 
-{"message":"Welcome to the 1st Assignment"}
+[{"title":"Book 1","id":1,"done":true},{"title":"Book 2","id":2,"done":false},{"title":"Book 3","id":3,"done":false},{"title":"Book 4","id":4,"done":false}]
 ```
 
-## Swagger Screenshot
+## Database Storage & Verification
 
-![alt text](a1_crud/assets/swagger_ui.png)
+The data is securely stored inside a PostgreSQL database running in its own container (`a1_crud-db-1`).
 
+Here is a look directly inside our running database via `psql`:
+
+```text
+$ docker exec a1_crud-db-1 psql -U postgres -d tasks -c '\dt' -c 'SELECT * FROM tasks;'
+
+         List of relations
+ Schema | Name  | Type  |  Owner   
+--------+-------+-------+----------
+ public | tasks | table | postgres
+(1 row)
+
+ id | title  | done 
+----+--------+------
+  1 | Book 1 | t
+  2 | Book 2 | f
+  3 | Book 3 | f
+  4 | Book 4 | f
+(4 rows)
+```
