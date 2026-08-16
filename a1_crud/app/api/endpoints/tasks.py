@@ -44,7 +44,7 @@ def add_task(title: str):
         )
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id", (title,))
+    cursor.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id", (title,)) 
     new_id = cursor.fetchone()["id"]
     conn.commit()
     cursor.execute("SELECT * FROM tasks WHERE id = %s", (new_id,))
