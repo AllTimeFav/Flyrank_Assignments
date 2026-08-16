@@ -26,7 +26,7 @@ def get_tasks():
 def return_task(id: int):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, title, done FROM tasks WHERE id = ?", (id,))
+    cursor.execute("SELECT id, title, done FROM tasks WHERE id = %s", (id,))
     row = cursor.fetchone()
     conn.close()
     if not row:
@@ -44,9 +44,10 @@ def add_task(title: str):
         )
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
+    cursor.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id", (title,))
+    new_id = cursor.fetchone()["id"]
     conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,))
+    cursor.execute("SELECT * FROM tasks WHERE id = %s", (new_id,))
     row = cursor.fetchone()
     conn.close()
     return Task(id=row["id"], title=row["title"], done=bool(row["done"]))    
@@ -59,9 +60,9 @@ def update_task(id: int, title: str, done: bool):
         )
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE tasks SET title = ?, done = ? WHERE id = ?", (title, done, id))
+    cursor.execute("UPDATE tasks SET title = %s, done = %s WHERE id = %s", (title, done, id))
     conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM tasks WHERE id = %s", (id,))
     row = cursor.fetchone()
     conn.close()
     if not row:
@@ -74,9 +75,9 @@ def update_task(id: int, title: str, done: bool):
 def delete_task(id : int):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM tasks WHERE id = %s", (id,))
     conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM tasks WHERE id = %s", (id,))
     row = cursor.fetchone()
     conn.close()
     if not row:
