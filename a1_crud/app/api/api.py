@@ -21,7 +21,7 @@ def get_public_info():
 @api_router.get("/protected/profile", summary="Get protected profile info")
 def get_protected_profile_info(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
-    response = supabase.auth.get_user(token)
+    response = supabase.auth.get_user(token) 
     if not response.user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return {status.HTTP_200_OK: {"User": response.user}}
