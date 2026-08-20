@@ -1,7 +1,12 @@
+from app.api.deps import get_current_user
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends
 from app.db.database import supabase
 from fastapi import status
 from fastapi import HTTPException
 from fastapi import APIRouter
+
+security = HTTPBearer()
 
 
 router = APIRouter(tags=["Auth"])
@@ -36,3 +41,11 @@ def login(email: str, password: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/protected/profile", summary="Get protected profile info")
+def get_protected_profile_info(current_user: dict = Depends(get_current_user)):
+    return {status.HTTP_200_OK: {"User": current_user}}
+
+@router.get("/protected/dashboard", summary="Get protected dashboard info")
+def get_protected_dashboard_info(current_user: dict = Depends(get_current_user)):
+    return {status.HTTP_200_OK: {"Dashboard": "Protected Dashboard"}}
