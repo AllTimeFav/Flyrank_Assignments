@@ -1,85 +1,58 @@
 from app.schemas.task import Task
-from app.db.database import get_db_connection
+from app.db.database import supabase
 from fastapi import status
 from fastapi import HTTPException
 from fastapi import APIRouter
 
 router = APIRouter(tags=["Tasks"])
 
-tasks = [
-    {"id": 1, "title": "First Book", "done": False},
-    {"id": 2, "title": "Second Book", "done": False},
-    {"id": 3, "title": "Third Book", "done": True}
-]
-
 @router.get("/", summary="Get all the tasks", response_model=list[Task])
 def get_tasks():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title, done FROM tasks")
-    rows = cursor.fetchall()
-    conn.close()
-
+    response = supabase.table("tasks").select("id, title, done").order("id").execute()
+    rows = response.data
     return [Task(id=row["id"], title=row["title"], done=bool(row["done"])) for row in rows]
 
 @router.get("/{id}", summary="Get a task by id", response_model=Task)
 def return_task(id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title, done FROM tasks WHERE id = %s", (id,))
-    row = cursor.fetchone()
-    conn.close()
-    if not row:
+    response = supabase.table("tasks").select("id, title, done").eq("id", id).execute()
+    if not response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
         )
+    row = response.data[0]
     return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
 
-
-@router.post("/", summary="Add a new task")
+@router.post("/", summary="Add a new task", response_model=Task)
 def add_task(title: str):
     if title.strip() == "":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required"
         )
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (title) VALUES (%s) RETURNING id", (title,)) 
-    new_id = cursor.fetchone()["id"]
-    conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = %s", (new_id,))
-    row = cursor.fetchone()
-    conn.close()
-    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))    
+    response = supabase.table("tasks").insert({"title": title}).execute()
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to insert task")
+    row = response.data[0]
+    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
 
-@router.put("/{id}", summary="Update a task by id")
+@router.put("/{id}", summary="Update a task by id", response_model=Task)
 def update_task(id: int, title: str, done: bool):
     if title.strip() == "" or done == None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Title and done are required"
         )
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE tasks SET title = %s, done = %s WHERE id = %s", (title, done, id))
-    conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = %s", (id,))
-    row = cursor.fetchone()
-    conn.close()
-    if not row:
+    response = supabase.table("tasks").update({"title": title, "done": done}).eq("id", id).execute()
+    if not response.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
         )
+    row = response.data[0]
     return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
 
 @router.delete("/{id}", summary="Delete a task by id")
-def delete_task(id : int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM tasks WHERE id = %s", (id,))
-    conn.commit()
-    cursor.execute("SELECT * FROM tasks WHERE id = %s", (id,))
-    row = cursor.fetchone()
-    conn.close()
-    if not row:
-        return {"message": "Task deleted successfully"}
-    return {"message": "Task not deleted"}
+def delete_task(id: int):
+    response = supabase.table("tasks").delete().eq("id", id).execute()
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found"
+        )
+    return {"message": "Task deleted successfully"}

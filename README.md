@@ -35,6 +35,14 @@ Here is a list of all available endpoints in the application:
 | POST | `/tasks/` | Add a new task |
 | PUT | `/tasks/{id}` | Update a task by id |
 | DELETE | `/tasks/{id}` | Delete a task by id |
+| POST | `/auth/signup` | Sign up a new user |
+| POST | `/auth/login` | Login to receive an access token |
+| GET | `/auth/protected/profile` | Get protected profile info (requires token) |
+| GET | `/auth/protected/dashboard` | Get protected dashboard info (requires token) |
+
+### Auth Swagger UI
+
+![Auth Endpoints in Swagger UI](a1_crud/assets/auth_swagger.png)
 
 ## Example Request
 

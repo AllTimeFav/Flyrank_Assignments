@@ -3,17 +3,10 @@ from fastapi import FastAPI
 
 from app.api.api import api_router
 
-import os
-from dotenv import load_dotenv
-from app.db.database import PostgresRepository
-
-load_dotenv()
-POSTGRES_URL = os.getenv("DATABASE_URL")
-
+from app.db.database import supabase
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db = PostgresRepository(connection_url=POSTGRES_URL)
     yield
 
 app = FastAPI(
