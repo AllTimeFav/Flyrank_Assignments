@@ -1,9 +1,11 @@
 from urllib3.util import timeout
 import os
+import sys
 import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
 
 os.makedirs("cache", exist_ok=True)
 
@@ -11,33 +13,57 @@ current_url = "https://books.toscrape.com/"
 unique_urls = set()
 discovered = 0
 catalogue_pages = 0
+total_detail_pages = 0
 
 header = {
     "user-agent": "FlyRankInternshipA9/1.0 (+https://github.com/AllTimeFav/Flyrank_Assignments)"
 }
+
+def getDetails(html_content, current_url):
+    detail_pages = 0
+    soup = BeautifulSoup(html_content, 'html.parser')
+    articles = soup.find_all('article', class_='product_pod')
+    for article in articles:
+        detail_pages += 1
+    
+    title = article.h3.a['title']
+    product_url = urljoin(current_url, article.find('h3').find('a')['href'])
+    price_text = article.find('p', class_='price_color').text.strip()
+    availability_text = article.find('p', class_='instock availability').text.strip()
+    rating = article.find('p', class_="star-rating")['class'][1]
+    source_page = current_url
+    description = article.find('p', class_="instock availability").find_next('a')['href'] or '...'
+    fetched_at = time.time()
+    
+    print(title, product_url, price_text, availability_text, rating, source_page, description, fetched_at)
+            
+    return detail_pages
 
 for pages in range(1, 4):
     cache_url = f"cache/catalogue-page-{pages}.html"
     html_content = ""
     
     if os.path.exists(cache_url):
-        print("Cahce Hit for ", cache_url)
+        print("Cache Hit for", cache_url)
         with open(cache_url, "r", encoding="utf-8") as f:
             html_content = f.read()
     else:
-        print("Fetch for, ", cache_url)
+        print("Fetch for", cache_url)
         try:
             res = requests.get(current_url, headers=header, timeout=5)
             if res.status_code == 200:
                 with open(cache_url, "w", encoding="utf-8") as f:
                     f.write(res.text)
                 html_content = res.text
-               
         except Exception as e:
             print("Exception: ", e)
             continue
         
         time.sleep(0.5)
+        
+    # Call getDetails outside the if/else so it runs for both cache hits and fresh fetches
+    page_details_count = getDetails(html_content, current_url)
+    total_detail_pages += page_details_count
         
     catalogue_pages += 1
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -57,4 +83,5 @@ for pages in range(1, 4):
         break   
         
 
+print(f"Total Detail Pages overall: {total_detail_pages}")
 print(f"catalogue_pages={catalogue_pages}, discovered={discovered}, unique_urls={len(unique_urls)}")
