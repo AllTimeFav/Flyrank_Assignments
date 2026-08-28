@@ -1,6 +1,7 @@
 {
     "extraPaths": [
-        "scrape/.venv/Lib/site-packages"
+        "scrape/.venv/Lib/site-packages",
+        "scrape/src"
     ],
     "venvPath": ".",
     "venv": "scrape/.venv"

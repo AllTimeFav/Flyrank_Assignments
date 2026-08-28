@@ -1,6 +1,6 @@
+from schema.article import Article
 from urllib3.util import timeout
 import os
-import sys
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -26,16 +26,42 @@ def getDetails(html_content, current_url):
     for article in articles:
         detail_pages += 1
     
-    title = article.h3.a['title']
-    product_url = urljoin(current_url, article.find('h3').find('a')['href'])
-    price_text = article.find('p', class_='price_color').text.strip()
-    availability_text = article.find('p', class_='instock availability').text.strip()
-    rating = article.find('p', class_="star-rating")['class'][1]
-    source_page = current_url
-    description = article.find('p', class_="instock availability").find_next('a')['href'] or '...'
-    fetched_at = time.time()
+        title = article.h3.a['title']
+        product_url = urljoin(current_url, article.find('h3').find('a')['href'])
+        price_text = article.find('p', class_='price_color').text.strip()
+        availability_text = article.find('p', class_='instock availability').text.strip()
+        rating = article.find('p', class_="star-rating")['class'][1]
+        source_page = current_url
+        
+        # The description is only on the detail page, not the catalogue page!
+        description = '...'
+        
+        fetched_at = time.time()
+        
+        price = float(price_text.replace('Â£', ''))
+
+        try:
+            a = Article(
+                title=title,
+                url=product_url,
+                price=price_text,
+                price_gbp=price,
+                availability=availability_text,
+                rating=rating,
+                source_page=source_page,
+                description=description,
+                fetched_at=fetched_at
+            )
+
+            with open("articles.json", "a", encoding="utf-8") as f:
+                f.write(a.model_dump_json() + "\n")
+            
+            print("Successfully Added")
+        except Exception as e:
+            with open("errors.json", "a", encoding="utf-8") as f:
+                f.write(str(e) + "\n")
+            print("Exception: ", e)
     
-    print(title, product_url, price_text, availability_text, rating, source_page, description, fetched_at)
             
     return detail_pages
 
